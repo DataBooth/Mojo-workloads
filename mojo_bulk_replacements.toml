@@ -8,6 +8,16 @@ directories = [
 ]
 
 [[replacements]]
-name = "alias-to-comptime"
-search = "alias "
-replace = "comptime "
+name = "sys-sizeof-import-to-size_of"
+search = "from sys import sizeof"
+replace = "from sys.info import size_of"
+
+[[replacements]]
+name = "sys-sizeof-call-to-size_of"
+search = "sizeof["
+replace = "size_of["
+
+[[replacements]]
+name = "gpu-import-to-flat-gpu"
+search = "from gpu.index import block_dim, block_idx, thread_idx"
+replace = "from gpu import thread_idx, block_idx, block_dim"

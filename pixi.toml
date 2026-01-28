@@ -8,6 +8,7 @@ version = "0.1.0"
 [tasks]
  test-gpu = "mojo src/test_gpu.mojo"
  stencil-bench = "mojo 7-point-stencil/Mojo/laplacian.mojo"
+ stencil-cpu-bench = "mojo benchmarks/stencil_cpu.mojo"
  babel-bench = "mojo babelStream/Mojo/babelStream.mojo"
  bude-bench = "mojo miniBUDE/Mojo/miniBUDE.mojo"
  hf-bench = "mojo hartree-fock/Mojo/hartree-fock.mojo"

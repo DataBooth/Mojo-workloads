@@ -9,28 +9,28 @@ from gpu import block_dim, block_idx, thread_idx, grid_dim
 from gpu.host import DeviceContext
 from python import Python
 
-alias NUM_ITER = 100
-alias NUM_POSES = 65536
-alias WG_SIZE = 64      # Work group size
+comptime NUM_ITER = 100
+comptime NUM_POSES = 65536
+comptime WG_SIZE = 64      # Work group size
 # DEFAULT_PPWI 1, 2, 4, 8, 16, 32, 64, 128
-alias PPWI = 64         # Poses per work item
+comptime PPWI = 64         # Poses per work item
 
-alias Zero = 0.0
-alias Quarter = 0.25
-alias Half = 0.5
-alias One = 1.0
-alias Two = 2.0
-alias Four = 4.0
-alias Cnstnt = 45.0
+comptime Zero = 0.0
+comptime Quarter = 0.25
+comptime Half = 0.5
+comptime One = 1.0
+comptime Two = 2.0
+comptime Four = 4.0
+comptime Cnstnt = 45.0
 
-alias HBTYPE_F = 70
-alias HBTYPE_E = 69
-alias HARDNESS = 38.0
-alias NPNPDIST = 5.5
-alias NPPDIST = 1.0
+comptime HBTYPE_F = 70
+comptime HBTYPE_E = 69
+comptime HARDNESS = 38.0
+comptime NPNPDIST = 5.5
+comptime NPPDIST = 1.0
 
-alias dtype = DType.float32
-alias FloatMax = max_finite[dtype]()
+comptime dtype = DType.float32
+comptime FloatMax = max_finite[dtype]()
 
 struct Vec3f32(Copyable, Movable):
     var x: Float32

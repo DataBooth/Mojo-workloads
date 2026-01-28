@@ -1,5 +1,5 @@
 from sys import argv, has_accelerator
-from sys.info import sizeof
+from sys.info import size_of
 from collections import List
 from math import ceildiv
 from time import monotonic
@@ -10,17 +10,17 @@ from gpu.host import DeviceContext
 from gpu.memory import AddressSpace, load
 from python import Python
 
-alias dtype = DType.float64
+comptime dtype = DType.float64
 # Default size of 2^25
-alias SIZE = pow(2, 25)    # input size, must be a multiple of 1024
-alias num_iter = 1001      # 1000 + 1 warmup runs
-alias TBSize = 1024
+comptime SIZE = pow(2, 25)    # input size, must be a multiple of 1024
+comptime num_iter = 1001      # 1000 + 1 warmup runs
+comptime TBSize = 1024
 
-alias initA: Scalar[dtype] = 0.1
-alias initB: Scalar[dtype] = 0.2
-alias initC: Scalar[dtype] = 0.0
-alias startScalar: Scalar[dtype] = 0.4
-alias DOT_READ_DWORDS_PER_LANE = 4
+comptime initA: Scalar[dtype] = 0.1
+comptime initB: Scalar[dtype] = 0.2
+comptime initC: Scalar[dtype] = 0.0
+comptime startScalar: Scalar[dtype] = 0.4
+comptime DOT_READ_DWORDS_PER_LANE = 4
 
 fn init_kernel(
     a: UnsafePointer[Scalar[dtype]],
@@ -131,8 +131,8 @@ def main():
 
         # Compute number of blocks for dot kernel
         var dot_elements_per_lane = 1
-        if not DOT_READ_DWORDS_PER_LANE * sizeof[UInt]() < sizeof[Scalar[dtype]]():
-            dot_elements_per_lane = DOT_READ_DWORDS_PER_LANE * sizeof[UInt]() // sizeof[Scalar[dtype]]()
+        if not DOT_READ_DWORDS_PER_LANE * size_of[UInt]() < size_of[Scalar[dtype]]():
+            dot_elements_per_lane = DOT_READ_DWORDS_PER_LANE * size_of[UInt]() // size_of[Scalar[dtype]]()
 
         # Round dot_num_blocks up to next multiple of (TBSIZE * dot_elements_per_lane)
         var dot_num_blocks = ceildiv(SIZE, (TBSize * dot_elements_per_lane))
@@ -218,13 +218,12 @@ def main():
 
         kernel_names = ["Copy", "Mul", "Add", "Triad", "Dot"]
         # Copy: 2N, Mul: 2N, Add: 3N, Triad: 3N, Dot: 2N
-        kernel_data = List[Int64](
-            2 * SIZE * sizeof[Scalar[dtype]](),
-            2 * SIZE * sizeof[Scalar[dtype]](),
-            3 * SIZE * sizeof[Scalar[dtype]](),
-            3 * SIZE * sizeof[Scalar[dtype]](),
-            2 * SIZE * sizeof[Scalar[dtype]](),
-        )
+        var kernel_data = List[Int64]()
+        kernel_data.append(2 * SIZE * size_of[Scalar[dtype]]())
+        kernel_data.append(2 * SIZE * size_of[Scalar[dtype]]())
+        kernel_data.append(3 * SIZE * size_of[Scalar[dtype]]())
+        kernel_data.append(3 * SIZE * size_of[Scalar[dtype]]())
+        kernel_data.append(2 * SIZE * size_of[Scalar[dtype]]())
 
         if csv_output:
             print("backend,GPU,precision,vec_size,routine,BW_GBs")
@@ -232,8 +231,8 @@ def main():
                 for k in range(num_iter):
                     print("Mojo,", ctx.name(), ",", dtype.__str__(), ",", SIZE, ",", kernel_names[i], ",", kernel_data[i] / kernel_timings[i][k])
         else:
-            print("Array size:", SIZE * sizeof[Scalar[dtype]]() * 1e-6, "MB")
-            print("Total size:", 3 * SIZE * sizeof[Scalar[dtype]]() * 1e-6, "MB")
+            print("Array size:", SIZE * size_of[Scalar[dtype]]() * 1e-6, "MB")
+            print("Total size:", 3 * SIZE * size_of[Scalar[dtype]]() * 1e-6, "MB")
             for i in range (5):
                 print(kernel_names[i], ":")
                 # Ignore the first result

@@ -2,21 +2,21 @@
 # https://github.com/amd/amd-lab-notes/blob/release/finite-difference/examples/kernel1.hpp
 
 from sys import argv, has_accelerator
-from sys.info import sizeof
+from sys.info import size_of
 from math import ceildiv
 from time import monotonic
 
 from gpu.host import DeviceContext
-from gpu.id import block_dim, block_idx, thread_idx
+from gpu import thread_idx, block_idx, block_dim
 from layout import Layout, LayoutTensor
 
-alias L = 512
-alias num_iter = 1000
-alias TBSize = 512
+comptime L = 512
+comptime num_iter = 1000
+comptime TBSize = 512
 
-alias precision = Float32
-alias dtype = DType.float32
-alias layout = Layout.row_major(L, L, L)
+comptime precision = Float32
+comptime dtype = DType.float32
+comptime layout = Layout.row_major(L, L, L)
 
 fn laplacian_kernel(
     f: LayoutTensor[mut=True, dtype, layout],
@@ -57,12 +57,12 @@ fn test_function_kernel(
     # Exit if this thread is outside the boundary
     if i < nx and j < ny and k < nz:
         c: precision = 0.5
-        x: precision = i * hx
-        y: precision = j * hy
-        z: precision = k * hz
-        Lx: precision = nx * hx
-        Ly: precision = ny * hy
-        Lz: precision = nz * hz
+        x: precision = precision(i) * hx
+        y: precision = precision(j) * hy
+        z: precision = precision(k) * hz
+        Lx: precision = precision(nx) * hx
+        Ly: precision = precision(ny) * hy
+        Lz: precision = precision(nz) * hz
         u[j, i, k] = c * x * (x - Lx) + c * y * (y - Ly) + c * z * (z - Lz)
 
 def main():
@@ -100,8 +100,8 @@ def main():
             print("Driver:", ctx.get_api_version())
 
         # Data for bandwidth calculation:
-        theoretical_fetch_size = (nx * ny * nz - 8 - 4 * (nx - 2) - 4 * (ny - 2) - 4 * (nz - 2)) * sizeof[precision]()
-        theoretical_write_size = ((nx - 2) * (ny - 2) * (nz - 2)) * sizeof[precision]()
+        theoretical_fetch_size = (nx * ny * nz - 8 - 4 * (nx - 2) - 4 * (ny - 2) - 4 * (nz - 2)) * size_of[precision]()
+        theoretical_write_size = ((nx - 2) * (ny - 2) * (nz - 2)) * size_of[precision]()
         datasize = theoretical_fetch_size + theoretical_write_size
 
         d_u = ctx.enqueue_create_buffer[dtype](nx * ny * nz)
@@ -115,10 +115,10 @@ def main():
         hz = 1.0 / (nz - 1)
 
         # Initialize test function: 0.5 * (x * (x - 1) + y * (y - 1) + z * (z - 1))
-        ctx.enqueue_function[test_function_kernel](
+        ctx.enqueue_function_unchecked[test_function_kernel](
             u_tensor, nx, ny, nz, hx, hy, hz,
-            grid_dim = (ceildiv(nx, BLK_X), ny, nz),
-            block_dim = (BLK_X, 1)
+            grid_dim = (ceildiv(nx, BLK_X), ceildiv(ny, BLK_Y), ceildiv(nz, BLK_Z)),
+            block_dim = (BLK_X, BLK_Y, BLK_Z),
         )
         ctx.synchronize()
 
@@ -129,7 +129,7 @@ def main():
         invhxyz2 = -2.0 * (invhx2 + invhy2 + invhz2)
 
         # Warmup call
-        ctx.enqueue_function[laplacian_kernel](
+        ctx.enqueue_function_unchecked[laplacian_kernel](
             f_tensor, u_tensor, nx, ny, nz,
             invhx2, invhy2, invhz2, invhxyz2,
             grid_dim = (ceildiv(nx, BLK_X), ceildiv(ny, BLK_Y), ceildiv(nz, BLK_Z)),
@@ -138,13 +138,13 @@ def main():
         ctx.synchronize()
 
         # Timing:
-        total_elapsed: UInt = 0
+        total_elapsed: Float64 = 0.0
         if csv_output:
             print("backend,GPU,precision,L,blk_x,blk_y,blk_z,BW_GBs")
 
         for _ in range(num_iter):
             start = monotonic()
-            ctx.enqueue_function[laplacian_kernel](
+            ctx.enqueue_function_unchecked[laplacian_kernel](
                 f_tensor, u_tensor, nx, ny, nz,
                 invhx2, invhy2, invhz2, invhxyz2,
                 grid_dim = (ceildiv(nx, BLK_X), ceildiv(ny, BLK_Y), ceildiv(nz, BLK_Z)),
@@ -154,15 +154,17 @@ def main():
             end = monotonic()
 
             elapsed = end - start
-            bw_gbs = datasize / elapsed
+            bw_gbs: Float64 = Float64(datasize) / Float64(elapsed)
             if csv_output:
                 print("mojo,", ctx.name(), ",", dtype.__str__(), ",", L, ",", BLK_X, ",", BLK_Y, ",", BLK_Z, ",", bw_gbs)
 
-            total_elapsed += elapsed
+            total_elapsed += Float64(elapsed)
 
         if not csv_output:
             print("Theoretical fetch size (GB):", theoretical_fetch_size * 1e-9)
             print("Theoretical fetch size (GB):", theoretical_write_size * 1e-9)
-            print("Average kernel time:", total_elapsed / 1e6 / num_iter, "ms")
-            print("Effective memory bandwidth:", datasize * num_iter / total_elapsed, "GB/s")
+            avg_ms: Float64 = total_elapsed / 1_000_000.0 / num_iter
+            eff_bw_gbs: Float64 = Float64(datasize) * Float64(num_iter) / total_elapsed
+            print("Average kernel time:", avg_ms, "ms")
+            print("Effective memory bandwidth:", eff_bw_gbs, "GB/s")
 

@@ -1,26 +1,26 @@
 from sys import has_accelerator, argv
-from sys.info import sizeof
+from sys.info import size_of
 from math import ceildiv, exp, sqrt, erf
 from time import monotonic
 from os.atomic import Atomic
 
-from gpu.id import block_dim, block_idx, thread_idx
+from gpu import thread_idx, block_idx, block_dim
 from gpu.host import DeviceContext
 from layout import Layout, LayoutTensor
 
-alias num_iter = 10
-alias natoms = 256
-alias ngauss = 3
-alias filepath = "../tests/he" + String(natoms)
-alias geom_layout = layout.col_major(natoms, ngauss)
+comptime num_iter = 10
+comptime natoms = 256
+comptime ngauss = 3
+comptime filepath = "../tests/he" + String(natoms)
+comptime geom_layout = layout.col_major(natoms, ngauss)
 
-alias pi: Float64 = 3.1415926535897931
-alias sqrtpi2: Float64 = pow(pi, -0.5) * 2.0
-alias dtol: Float64 = 1.0e-12
-alias rcut: Float64 = 1.0e-12
-alias tobohrs: Float64 = 1.889725987722
-alias layout = Layout.row_major(natoms, natoms)
-alias dtype = DType.float64
+comptime pi: Float64 = 3.1415926535897931
+comptime sqrtpi2: Float64 = pow(pi, -0.5) * 2.0
+comptime dtol: Float64 = 1.0e-12
+comptime rcut: Float64 = 1.0e-12
+comptime tobohrs: Float64 = 1.889725987722
+comptime layout = Layout.row_major(natoms, natoms)
+comptime dtype = DType.float64
 
 fn read_file(xpnt: UnsafePointer[Float64],
              coef: UnsafePointer[Float64],
