@@ -1,0 +1,13 @@
+[settings]
+include_extensions = ["mojo"]
+directories = [
+  "7-point-stencil/Mojo",
+  "babelStream/Mojo",
+  "miniBUDE/Mojo",
+  "hartree-fock/Mojo",
+]
+
+[[replacements]]
+name = "alias-to-comptime"
+search = "alias "
+replace = "comptime "

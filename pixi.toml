@@ -14,3 +14,4 @@ version = "0.1.0"
 
 [dependencies]
 mojo = ">=0.26.2.0.dev2026012705,<0.27"
+python = "3.11.*"
